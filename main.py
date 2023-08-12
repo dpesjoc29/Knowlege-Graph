@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import spacy
 import matplotlib.pyplot as plt
 import networkx as nx
+# from networkx.algorithms.isomorphism import subgraph_isomorphisms
 
 
 # nltk.download('punkt')
@@ -87,6 +88,57 @@ for article in articles:
                 G.add_edge(subject, obj, relationship = relationship)
 
 # print("test 4")
+
+#asking question tothe user
+user_question  = input("Please enter a question:")
+
+
+#parsing and analyzning user's question to identify relevant entities and relationship
+doc = nlp(user_question)
+
+
+#initialize placeholders
+question_subject = None
+question_relationship = None
+
+
+#extractinf subj and relationship based on POS tags and NER
+for token  in doc:
+    if token.pos =="NOUN" and token.ent_type_ == "PERSON":
+        question_subject = token.text
+    elif token.pos_ == "VERB":
+        question_relationship = token.text
+    # print("test 5")
+
+print("---Extracted Subject and Relationship from Question---")
+print(question_subject, question_relationship)
+
+
+# Define a question pattern as a subgraph
+question_pattern = nx.DiGraph()
+question_pattern.add_nodes_from(["subject", "object"])
+question_pattern.add_edge("subject", "object", relationship=question_relationship)
+
+
+# Search for matching patterns in the graph
+# matching_subgraphs = list(nx.subgraph_isomorphisms(G, question_pattern))
+matching_subgraphs = [
+    subgraph
+    for subgraph in G.nodes()
+    if G.has_edge(question_subject, subgraph) and G[question_subject][subgraph]["relationship"] == question_relationship
+]
+
+
+# Retrieve answers based on the matching subgraphs
+for subgraph in matching_subgraphs:
+    # subject = match["subject"]
+    obj = subgraph
+    relationship = G[question_subject][obj]["relationship"]
+
+    # Construct and print the answer
+    answer = f"{question_subject} is {relationship} {obj}."
+    print(answer)
+print(question_subject)
 
 #drawing the directed graph 
 pos = nx.spring_layout(G)
